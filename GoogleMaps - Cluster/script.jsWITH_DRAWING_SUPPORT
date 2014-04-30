@@ -1,0 +1,279 @@
+//Google Maps APIv3 with MarkerCluster v2.0.1
+//Created by Alexander Karlsson - akl@qlikview.com - QlikTech Nordic AB
+//Tested on QV11
+//
+//QlikTech takes no responsbility for any code.
+//Use at your own risk.
+//Do not submerge in water.
+//Do not taunt Happy Fun Ball.
+
+//
+//7 Edits to demo Google API drawing tools. Problem with 'Back' selection, one selection at a time.
+//Example discussion on Stackoverflow http://stackoverflow.com/questions/5213262/how-to-draw-a-rectangular-area-on-a-large-google-map-and-query-database-to-find
+//Google Drawing Tools example https://developers.google.com/maps/documentation/javascript/examples/drawing-tools
+
+
+function map_init() {
+	Qva.AddExtension("GoogleMaps - Cluster",function() {
+		console.log(this)
+		var _this = this;
+		var divName = _this.Layout.ObjectId.replace("\\", "_");
+		var popupLabels = _this.Layout.Text0.text;
+		var gSize = _this.Layout.Text1.text;
+		var mZoom = _this.Layout.Text2.text;
+		var markers = [];
+		var infoList = [];
+
+		var latlngbounds = new google.maps.LatLngBounds();
+		//Edit 1 Start
+		var drawingManager;
+        var lastShape;
+		var match = 0;
+		var matchLat = [];
+		var matchLng = [];
+		//Edit 1 End
+
+		if (_this.Element.children.length === 0) {
+			var ui = document.createElement("div");
+			ui.setAttribute("id", divName);
+			_this.Element.appendChild(ui);
+			$("#" + divName).css("height", _this.GetHeight() + "px").css("width", _this.GetWidth() + "px");
+		} else {
+			$("#" + divName).css("height", _this.GetHeight() + "px").css("width", _this.GetWidth() + "px");
+			$("#" + divName).empty();
+		};
+
+		var map = new google.maps.Map(document.getElementById(divName), {
+			mapTypeId: google.maps.MapTypeId.ROADMAP
+		});
+
+
+		//Edit 2 Start
+
+		var shapeOptions = {
+          strokeWeight: 1,
+          strokeOpacity: 1,
+          fillOpacity: 0.2,
+          editable: false,
+          clickable: false,
+          strokeColor: '#3399FF',
+          fillColor: '#3399FF'
+        };
+
+
+		// create drawing manager
+        drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: null,
+          drawingControlOptions: {drawingModes: [google.maps.drawing.OverlayType.POLYGON, google.maps.drawing.OverlayType.RECTANGLE]},
+          rectangleOptions: shapeOptions,
+          polygonOptions: shapeOptions,
+          map: map
+        });
+
+            var shift_draw = false;
+
+            $(document).bind('keydown', function(e) {
+                if(e.keyCode==16 && shift_draw == false){
+                    map.setOptions({draggable: false, disableDoubleClickZoom: true});
+                    shift_draw = true; // enable drawing
+                    drawingManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE);
+                }
+
+            });
+
+            $(document).bind('keyup', function(e) {
+                if(e.keyCode==16){
+                    map.setOptions({draggable: true, disableDoubleClickZoom: true});
+                    shift_draw = false // disable drawing
+                    drawingManager.setDrawingMode(null);
+                }
+
+            });
+
+            google.maps.event.addListener(map, 'mousedown', function () {
+                if (lastShape != undefined) {
+                        lastShape.setMap(null);
+                        $('#inside').html('...');
+                        $('#bounds').html('...');
+                }
+            });
+
+            google.maps.event.addListener(map, 'drag', function () {
+                if (lastShape != undefined) {
+                        lastShape.setMap(null);
+                        $('#inside').html('...');
+                        $('#bounds').html('...');
+                }
+            });
+
+		//Edit 2 End
+
+		var reg = /\.(gif|jpg|jpeg|tiff|png|bmp)$/;
+		var rowreg = _this.Data.Rows [0];
+
+		if(reg.test(rowreg[3].text))
+		{
+			for (var i=0,k=_this.Data.Rows.length;i<k;i++){
+				var row = _this.Data.Rows [i];
+				var val = parseFloat(row[0].text);
+				var val2 = parseFloat(row[1].text);
+				if (val != NaN && val !='' && val <= 90 && val >= -90 && val2 != NaN && val2 !='' && val2 <= 180 && val >= -180) {
+					var latLng = new google.maps.LatLng(row[0].text,row[1].text);
+					var marker = new google.maps.Marker({position: latLng, icon: row[3].text});
+
+				if (popupLabels === 1) {
+
+						marker.infoWindow = new google.maps.InfoWindow({content: row[2].text});
+
+			   			google.maps.event.addListener(marker,'mouseover',function() {
+					      infoList.push(this);
+					      this.infoWindow.open(map,this);
+					   	});
+
+					   	google.maps.event.addListener(marker,'mouseout',function() {
+					      infoList.push(this);
+					      this.infoWindow.close();
+					   	});
+				   	};
+		//Edit 3 switch to SelectTextsInColumn
+		//			google.maps.event.addListener(marker, 'click', (function(lat,lng) { return function() { _this.Data.SearchColumn(0,lat,false); _this.Data.SearchColumn(1,lng,true) }})(row[0].text,row[1].text));
+					google.maps.event.addListener(marker, 'click', (function(lat,lng) { return function() { console.log('click event fired'); _this.Data.SelectTextsInColumn(0,false,lat); _this.Data.SelectTextsInColumn(1,false,lng) }})(row[0].text,row[1].text));
+					latlngbounds.extend(latLng);
+					markers.push(marker);
+				} else {
+   					console.log('Data error on row ' + i + ' with values ' + row[0].text +', ' + row[1].text)
+   				};
+			};
+		} else {
+
+			for (var i=0,k=_this.Data.Rows.length;i<k;i++){
+				var row = _this.Data.Rows [i];
+				var val = parseFloat(row[0].text);
+				var val2 = parseFloat(row[1].text);
+				if (val != NaN && val !='' && val <= 90 && val >= -90 && val2 != NaN && val2 !='' && val2 <= 180 && val >= -180) {
+					var latLng = new google.maps.LatLng(row[0].text,row[1].text);
+					//Edit 4 add val and val2 to the Marker
+					var marker = new google.maps.Marker({position: latLng, latnbr: val, lngnbr: val2});
+
+					if (popupLabels === 1) {
+
+						marker.infoWindow = new google.maps.InfoWindow({content: row[2].text});
+
+			   			google.maps.event.addListener(marker,'mouseover',function() {
+					      infoList.push(this);
+					      this.infoWindow.open(map,this);
+					   	});
+
+					   	google.maps.event.addListener(marker,'mouseout',function() {
+					      infoList.push(this);
+					      this.infoWindow.close();
+					   	});
+
+				   	};
+				} else {
+   					console.log('Data error on row ' + i + ' with values ' + row[0].text +', ' + row[1].text)
+   				};
+				// Edit 5 switch to SelectTextsInColumn
+				//google.maps.event.addListener(marker, 'click', (function(lat,lng) { return function() { _this.Data.SearchColumn(0,lat,false); _this.Data.SearchColumn(1,lng,true) }})(row[0].text,row[1].text));
+				google.maps.event.addListener(marker, 'click', (function(lat,lng) { return function() { console.log('click event fired'); _this.Data.SelectTextsInColumn(0,false,lat); _this.Data.SelectTextsInColumn(1,false,lng) }})(row[0].text,row[1].text));
+				latlngbounds.extend(latLng);
+				markers.push(marker);
+
+
+			};
+		}
+
+		map.setCenter(latlngbounds.getCenter());
+   		map.fitBounds(latlngbounds);
+		var mcOptions = {gridSize: gSize, maxZoom: mZoom};
+		var markerCluster = new MarkerClusterer(map, markers, mcOptions);
+
+		//Edit 6 Start - loop through marker list to check which are within the rectangle or polygon
+		google.maps.event.addListener(drawingManager, 'overlaycomplete', function(e) {
+
+            if (lastShape != undefined) {
+                    lastShape.setMap(null);
+            }
+
+            // cancel drawing mode
+            if (shift_draw == false) { drawingManager.setDrawingMode(null); }
+
+            lastShape = e.overlay;
+            lastShape.type = e.type;
+
+						          if (lastShape.type == google.maps.drawing.OverlayType.RECTANGLE) {
+
+								lastBounds = lastShape.getBounds();
+
+								$('#bounds').html(lastBounds.toString());
+								match = 0;
+								matchLat = [];
+
+								for (var a in markers) {
+								// determine if marker1 is inside bounds:
+
+									if (lastBounds.contains(markers[a].position)) {
+
+									match = match + 1;
+									matchLat.push(markers[a].latnbr);
+									matchLng.push(markers[a].lngnbr);
+
+									} else {
+									// no match
+									}
+
+								}
+
+            } else if (lastShape.type == google.maps.drawing.OverlayType.POLYGON) {
+
+                $('#bounds').html('N/A');
+				match = 0;
+				matchLat = [];
+						for (var a in markers) {
+	                // determine if marker is inside the polygon:
+                // (refer to: https://developers.google.com/maps/documentation/javascript/reference#poly)
+                if (google.maps.geometry.poly.containsLocation(markers[a].position, lastShape)) {
+					match = match + 1;
+					matchLat.push(markers[a].latnbr);
+					matchLng.push(markers[a].lngnbr);
+                } else {
+                     //no match
+                }
+            }
+            }
+
+			//If matching markers found then select whole array of matching markers for each of Lat & Long ...toggle ?
+			if (match >= 1) {
+				console.log('Select stuff')
+				console.log(matchLat)
+				console.log(matchLng)
+			_this.Data.SelectTextsInColumn(0,true,matchLat);
+			_this.Data.SelectTextsInColumn(1,true,matchLng);
+
+			}
+        });
+		//Edit 6 End - Add drawing tools
+	});
+
+console.log(Qva.ObjectifyXML(this.Layout))
+};
+
+/* load external libs - callback map_init() */
+if (!((typeof google !== "undefined" && google !== null ? google.maps : void 0) != null)) {
+	console.log('loading script')
+	loadLibs();
+} else {
+	console.log('script is already loaded')
+	map_init();
+};
+function loadLibs() {
+
+Qva.LoadScript('/QvAjaxZfc/QvsViewClient.aspx?public=only&name=Extensions/GoogleMaps - Cluster/markerclusterer.js', function () {
+	//Qva.LoadScript('https://maps.google.com/maps/api/js?sensor=false&callback=map_init')
+	//Edit 7 Line replace add 'libraries = drawing'
+	Qva.LoadScript('https://maps.google.com/maps/api/js?sensor=false&libraries=drawing&callback=map_init')
+});
+
+
+};
+
