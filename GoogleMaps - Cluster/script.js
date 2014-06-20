@@ -138,7 +138,7 @@ function map_init() {
 				var val = parseFloat(row[0].text);
 				var val2 = parseFloat(row[1].text);
 				if (val != NaN && val != '' && val <= 90 && val >= -90 && val2 != NaN && val2 != '' && val2 <= 180 && val >= -180) {
-					var latLng = new google.maps.LatLng(row[0].text, row[1].text);
+					var latLng = new google.maps.LatLng(val, val2);
 					var marker = new google.maps.Marker({
 						position: latLng,
 						title: '',
@@ -168,7 +168,7 @@ function map_init() {
 							_this.Data.SearchColumn(0, lat, false);
 							_this.Data.SearchColumn(1, lng, true)
 						}
-					})(row[0].text, row[1].text));
+					})(val, val2));
 					latlngbounds.extend(latLng);
 					markers.push(marker);
 				}
@@ -180,7 +180,7 @@ function map_init() {
 				var val = parseFloat(row[0].text);
 				var val2 = parseFloat(row[1].text);
 				if (val != NaN && val != '' && val <= 90 && val >= -90 && val2 != NaN && val2 != '' && val2 <= 180 && val >= -180) {
-					var latLng = new google.maps.LatLng(row[0].text, row[1].text);
+					var latLng = new google.maps.LatLng(val, val2);
 					var marker = new google.maps.Marker({
 						position: latLng,
 						title: '',
@@ -209,7 +209,7 @@ function map_init() {
 						_this.Data.SearchColumn(0, lat, false);
 						_this.Data.SearchColumn(1, lng, true)
 					}
-				})(row[0].text, row[1].text));
+				})(val, val2));
 				latlngbounds.extend(latLng);
 				markers.push(marker);
 			};
