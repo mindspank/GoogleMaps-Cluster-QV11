@@ -98,10 +98,10 @@ function map_init() {
 			}]
 		}]
 
-		if (_this.Element.children.length === 0) {
+		if (this.Element.children.length === 0) {
 			var ui = document.createElement("div");
 			ui.setAttribute("id", divName);
-			_this.Element.appendChild(ui);
+			this.Element.appendChild(ui);
 			$("#" + divName).css("height", _this.GetHeight() + "px").css("width", _this.GetWidth() + "px");
 		} else {
 			$("#" + divName).css("height", _this.GetHeight() + "px").css("width", _this.GetWidth() + "px");
@@ -233,7 +233,6 @@ function map_init() {
 		};
 
 		var markerCluster = new MarkerClusterer(map, markers, mcOptions);
-
 		markerCluster.setCalculator(function(markers, clusterStyles) {
 
 			var index = 0,
@@ -288,4 +287,4 @@ function abbreviateNumber(value) {
 		newValue = shortValue + suffixes[suffixNum];
 	}
 	return newValue;
-}
+};
